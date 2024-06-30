@@ -53,3 +53,7 @@ body {
 .main-container {
     min-height: 80vh;
 }
+
+.pointer:hover, a:hover {
+    cursor: pointer;
+}
