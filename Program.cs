@@ -60,9 +60,9 @@ app.MapGet("/signup", (HttpContext context, IAntiforgery antiforgery) =>
                 <input name=""{token.FormFieldName}"" type=""hidden"" value=""{token.RequestToken}"" />
                 <input type=""text"" name=""email"" class=""form-control m-0"" placeholder=""Enter Your Email"" required/> <br/><br/>
                 <input type=""password"" name=""password"" class=""form-control m-0"" placeholder=""Create a Password"" required/> <br/><br/>
-                <button type=""submit"" class=""btn btn-primary m-0"">Sign Up</button>
-                <div class=""alert alert-warning mb-3"" id=""#error-signup""></div>
+                <button type=""submit"" class=""btn btn-primary m-0 mb-5"">Sign Up</button>
             </form>
+            <div id=""error-signup""></div>
         </div>
         ";
 
@@ -81,10 +81,11 @@ app.MapGet("/login", (HttpContext context, IAntiforgery antiforgery) =>
             <br/>
             <form hx-post=""/login"" hx-target=""#error-login"" method=""post"">
                 <input name=""{token.FormFieldName}"" type=""hidden"" value=""{token.RequestToken}"" />
-                <input type=""text"" name=""email"" class=""form-control m-0"" placeholder=""Enter Your Email"" required/> <br/><br/>
+                <input type=""email"" name=""email"" class=""form-control m-0"" placeholder=""Enter Your Email"" required/> <br/><br/>
                 <input type=""password"" name=""password"" class=""form-control m-0"" placeholder=""Enter Your Password"" required/> <br/><br/>
-                <div class=""alert alert-warning mb-3"" id=""#error-login""></div>
+                <button type=""submit"" class=""btn btn-primary m-0 mb-5"">Login</button>
             </form>
+            <div id=""error-login""></div>
         </div>
         ";
 
@@ -109,23 +110,42 @@ app.MapPost("/signup", async (
 
         if (userCount > 0)
         {
-            html = "user already exists";
+            html =
+                $"""
+                <div class="alert-danger alert mb-3">
+                User already exists
+                </div>
+                """;
         }
-
+        else
+        {
             var sqlInsert = @"INSERT INTO user (email, password) VALUES (@Email, @Password)";
             var result = await connection.ExecuteAsync(sqlInsert, new { Email = email, Password = password });
             if (result > 0)
             {
+                //TODO: replace with redirection
                 html = "sign up successful";
             }
             else
             {
-                html = "Error During Signup";
+                html =
+                    $"""
+                    <div class="alert-danger alert mb-3">
+                        Error during signup
+                    </div>
+                    """;
             }
+        }
+
     }
     catch(Exception e)
     {
-        html = "Error During Signup";
+        html =
+            $"""
+            <div class="alert-danger alert mb-3">
+                Error during signup
+            </div>
+            """;
 
     }
 
@@ -142,23 +162,47 @@ app.MapPost("/login", async (
     [FromForm] string password,
     IAntiforgery antiforgery) =>
 {
-    await antiforgery.ValidateRequestAsync(context);
+    var html = "";
 
-    var sql = @"SELECT email FROM user WHERE email = @Email AND password = @Password";
-    var user = await connection.QueryFirstOrDefaultAsync<string>(sql, new { Email = email, Password = password });
-
-    if (user != null)
+    try
     {
-        var claims = new List<Claim> { new Claim(ClaimTypes.Name, email) };
-        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+        await antiforgery.ValidateRequestAsync(context);
+        var sql = @"SELECT email FROM user WHERE email = @Email AND password = @Password";
+        var user = await connection.QueryFirstOrDefaultAsync<string>(sql, new { Email = email, Password = password });
 
-        return Results.Ok("Login Successful!");
+        if (user != null)
+        {
+            var claims = new List<Claim> { new Claim(ClaimTypes.Name, email) };
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+
+            html="Login Successful!";//TODO: replace with redirection
+        }
+        else
+        {
+            html =
+                $"""
+                <div class="alert-danger alert mb-3">
+                    Invalid credentials
+                </div>
+                """;
+        }
+
     }
-    else
+    catch (Exception e)
     {
-        return Results.BadRequest("Invalid login attempt.");
+        html =
+            $"""
+            <div class="alert-danger alert mb-3">
+                Error during login
+            </div>
+            """;
+
     }
+
+    return Results.Content(html, "text/html");
+
 });
+
 
 app.Run();
