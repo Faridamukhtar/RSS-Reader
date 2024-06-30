@@ -10,7 +10,7 @@
 </head>
 
 <body>
-    <header>
+    <header id="entire-page">
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white mb-3">
             <div class="container">
                 <a class="navbar-brand pointer" hx-get="/home" hx-target="#main-container">Turbo<em class="em-purple">Feeds</em></a>
@@ -30,11 +30,12 @@
                 </div>
             </div>
         </nav>
+
+        <div class="pb-3 main-container" id="main-container" hx-get="/home" hx-trigger="load">
+
+        </div>
     </header>
 
-    <div class="pb-3 main-container" id="main-container" hx-get="/home" hx-trigger="load">
-
-    </div>
 
     <footer class="border-top footer text-muted">
         <div class="container">
