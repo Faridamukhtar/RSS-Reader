@@ -8,6 +8,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using System.Xml;
 using System.Text.RegularExpressions;
+using static System.Net.Mime.MediaTypeNames;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,7 +36,7 @@ app.MapGet("/", (HttpContext context) =>
 
 app.MapGet("/home", (HttpContext context) =>
 {
-    string html =
+    var html =
         $"""
         <div class="text-center mt-5 pt-5">
             <em style="font-size:6rem;" class="em-black">Turbo</em><em style="font-size:6rem;" class="em-purple">Feeds</em>
@@ -50,26 +51,44 @@ app.MapGet("/home", (HttpContext context) =>
 });
 
 
-app.MapGet("/signup", (HttpContext context) =>
+app.MapGet("/signup", (HttpContext context, IAntiforgery antiforgery) =>
 {
-    string html =
-        $"""
-        <div class="text-center">
-        SignUp content
+    var token = antiforgery.GetAndStoreTokens(context);
+
+    var html =
+        $@"
+        <div class=""container"">
+            <h1 class=""font-weight-bold""> Sign Up</h1>
+            <br/>
+            <form hx-get=""/signup"">
+                <input name=""{token.FormFieldName}"" type=""hidden"" value=""{token.RequestToken}"" />
+                <input type=""text"" name=""email"" class=""form-control m-0"" placeholder=""Enter Your Email"" required/> <br/><br/>
+                <input type=""text"" name=""password"" class=""form-control m-0"" placeholder=""Create a Password"" required/> <br/><br/>
+                <button type=""submit"" class=""btn btn-primary m-0"">Sign Up</button>
+            </form>
         </div>
-        """;
+        ";
 
     return Results.Content(html, "text/html");
-
 });
 
-app.MapGet("/login", (HttpContext context) =>
+app.MapGet("/login", (HttpContext context, IAntiforgery antiforgery) =>
 {
-    string html = $"""
-    <div class="text-center">
-    Login content
-    </div>
-    """;
+    var token = antiforgery.GetAndStoreTokens(context);
+
+    var html =
+        $@"
+        <div class=""container"">
+            <h1 class=""font-weight-bold"">Login</h1>
+            <br/>
+            <form hx-get=""/login"">
+                <input name=""{token.FormFieldName}"" type=""hidden"" value=""{token.RequestToken}"" />
+                <input type=""text"" name=""email"" class=""form-control m-0"" placeholder=""Enter Your Email"" required/> <br/><br/>
+                <input type=""text"" name=""password"" class=""form-control m-0"" placeholder=""Enter Your Password"" required/> <br/><br/>
+                <button type=""submit"" class=""btn btn-primary m-0"">Login</button>
+            </form>
+        </div>
+        ";
 
     return Results.Content(html, "text/html");
 
