@@ -394,7 +394,7 @@ app.MapPost("/logout", async (HttpContext context) =>
 {
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     context.Response.Cookies.Delete("YourAppCookieName"); // Replace with your cookie name
-    return Results.Redirect("/");
+    context.Response.Redirect("/");
 });
 
 app.Run();
