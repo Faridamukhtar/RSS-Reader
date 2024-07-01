@@ -27,11 +27,19 @@ var _connectionString = "Data Source=RSS.db";
 var connection = new SqliteConnection(_connectionString);
 connection.Open();
 
+//Load home page
 app.MapGet("/", (HttpContext context) =>
 {
-    return Results.File("index.cshtml", "text/html");
+    if (context.User.Identity?.IsAuthenticated ?? false)
+    {
+        return Results.File("feed.html", "text/html");
+    }
+
+    return Results.File("index.html", "text/html");
 });
 
+
+//Load landing logo
 app.MapGet("/home", (HttpContext context) =>
 {
     var html =
@@ -58,6 +66,7 @@ app.Use(async (context, next) =>
     {
         if (context.User.Identity?.IsAuthenticated ?? false)
         {
+            context.Response.Headers.Add("HX-Trigger", "replaceNavLinks");
             context.Response.Redirect("/feed");
             return;
         }
@@ -190,6 +199,7 @@ app.MapPost("/signup", async (
     return Results.Content(html, "text/html");
 });
 
+// Process login request
 app.MapPost("/login", async (
     HttpRequest request,
     HttpContext context,
@@ -249,6 +259,7 @@ app.MapGet("/feed", (HttpContext context) =>
 });
 
 
+//Load subscribed feeds' list
 app.MapGet("/feeds", async (HttpContext context, IAntiforgery antiforgery) =>
 {
     var user = context.User;
@@ -267,7 +278,7 @@ app.MapGet("/feeds", async (HttpContext context, IAntiforgery antiforgery) =>
     return Results.Content(html, "text/html");
 });
 
-
+//Load selected rss feed
 app.MapGet("/rss", async (HttpContext context, [FromQuery] string url) =>
 {
     using var httpClient = new HttpClient();
@@ -282,15 +293,17 @@ app.MapGet("/rss", async (HttpContext context, [FromQuery] string url) =>
         PubDate = item.Element("pubDate")?.Value
     });
 
-    var html = "<h1>RSS Feed</h1><div id='rss-feed'>";
+    var html = "<div class='container mt-4'>";
 
     foreach (var item in items)
     {
         html += $@"
-        <div class='rss-item'>
-            <h2><a href='{item.Link}'>{item.Title}</a></h2>
-            <p>{item.Description}</p>
-            <small>{item.PubDate}</small>
+        <div class='card mb-4'>
+            <div class='card-body'>
+                <h5 class='card-title'><a href='{item.Link}' class='text-decoration-none'>{item.Title}</a></h5>
+                <p class='card-text'>{item.Description}</p>
+                <p class='card-text'><small class='text-muted'>{item.PubDate}</small></p>
+            </div>
         </div>";
     }
 
@@ -298,6 +311,7 @@ app.MapGet("/rss", async (HttpContext context, [FromQuery] string url) =>
 
     return Results.Content(html, "text/html");
 });
+
 
 
 

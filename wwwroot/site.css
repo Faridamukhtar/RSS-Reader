@@ -5,6 +5,7 @@ body {
     font-family: "Montserrat", sans-serif;
     background-color: #f5f5f5;
     color: #3e3e3e;
+    margin-bottom: 60px;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -12,7 +13,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 html {
-  font-size: 14px;
+    font-size: 14px;
+    position: relative;
+    min-height: 100%;
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
@@ -24,15 +27,6 @@ html {
     background-color: #9d32ff;
 }
 
-html {
-  position: relative;
-  min-height: 100%;
-}
-
-body {
-  margin-bottom: 60px;
-}
-
 .navbar-brand {
     font-weight: 800
 }
@@ -41,6 +35,15 @@ body {
     color: #9d32ff;
     font-weight: 800;
     font-style: normal;
+}
+
+.card-title a {
+    color: #3e3e3e;
+}
+
+.card-title a:hover {
+    color: #6f42c1;
+    text-decoration: underline;
 }
 
 .em-black {
@@ -85,6 +88,43 @@ body {
     color: #9d32ff;
 }
 
+
+.topbar {
+    display: none;
+}
+
+@media (max-width: 991.98px) {
+    .sidebar {
+        display: none;
+    }
+
+    .topbar {
+        display: block;
+        background-color: #f8f9fa;
+        padding: 10px;
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    .topbar .feed-list-mobile {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+
+        .topbar .feed-list-mobile li {
+            list-style: none;
+            padding: 5px;
+            white-space: nowrap;
+        }
+
+        .topbar .feed-list-mobile a {
+            text-decoration: none;
+            color: #000;
+        }
+}
 
 @media (min-width: 768px) {
     html {
