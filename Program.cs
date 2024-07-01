@@ -5,6 +5,8 @@ using Dapper;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
+using System.Xml.Linq;
+using BCrypt.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +29,7 @@ connection.Open();
 
 app.MapGet("/", (HttpContext context) =>
 {
-    return Results.File("index.html", "text/html");
+    return Results.File("index.cshtml", "text/html");
 });
 
 app.MapGet("/home", (HttpContext context) =>
@@ -44,6 +46,24 @@ app.MapGet("/home", (HttpContext context) =>
         """;
 
     return Results.Content(html, "text/html");
+});
+
+
+//Redirect already authenticated users
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path;
+
+    if (path.StartsWithSegments("/signup") || path.StartsWithSegments("/login"))
+    {
+        if (context.User.Identity?.IsAuthenticated ?? false)
+        {
+            context.Response.Redirect("/feed");
+            return;
+        }
+    }
+
+    await next();
 });
 
 // Get Sign-Up Form
@@ -105,56 +125,71 @@ app.MapPost("/signup", async (
     try
     {
         await antiforgery.ValidateRequestAsync(context);
+
         var sqlCheck = @"SELECT COUNT(*) FROM user WHERE email = @Email";
         var userCount = await connection.ExecuteScalarAsync<int>(sqlCheck, new { Email = email });
 
         if (userCount > 0)
         {
             html =
-                $"""
-                <div class="alert-danger alert mb-3">
-                User already exists
+                $@"
+                <div class=""alert-danger alert mb-3"">
+                    User already exists
                 </div>
-                """;
+                ";
         }
         else
         {
+            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
+
             var sqlInsert = @"INSERT INTO user (email, password) VALUES (@Email, @Password)";
-            var result = await connection.ExecuteAsync(sqlInsert, new { Email = email, Password = password });
+            var result = await connection.ExecuteAsync(sqlInsert, new { Email = email, Password = hashedPassword });
+
             if (result > 0)
             {
-                //TODO: replace with redirection
-                html = "sign up successful";
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, email)
+                };
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                await context.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    new AuthenticationProperties
+                    {
+                        IsPersistent = true,
+                        ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30)
+                    });
+
+                Results.Redirect("/feed");
+                return Results.Content(html, "text/html");
             }
             else
             {
                 html =
-                    $"""
-                    <div class="alert-danger alert mb-3">
+                    $@"
+                    <div class=""alert-danger alert mb-3"">
                         Error during signup
                     </div>
-                    """;
+                    ";
             }
         }
-
     }
-    catch(Exception e)
+    catch (Exception e)
     {
         html =
-            $"""
-            <div class="alert-danger alert mb-3">
+            $@"
+            <div class=""alert-danger alert mb-3"">
                 Error during signup
             </div>
-            """;
-
+            ";
     }
 
     return Results.Content(html, "text/html");
-
-
 });
 
-// Process Login Request
 app.MapPost("/login", async (
     HttpRequest request,
     HttpContext context,
@@ -167,16 +202,21 @@ app.MapPost("/login", async (
     try
     {
         await antiforgery.ValidateRequestAsync(context);
-        var sql = @"SELECT email FROM user WHERE email = @Email AND password = @Password";
-        var user = await connection.QueryFirstOrDefaultAsync<string>(sql, new { Email = email, Password = password });
+        var sql = @"SELECT email, password FROM user WHERE email = @Email";
+        var user = await connection.QueryFirstOrDefaultAsync<dynamic>(sql, new { Email = email });
 
-        if (user != null)
+        if (user != null && BCrypt.Net.BCrypt.Verify(password, user.password))
         {
             var claims = new List<Claim> { new Claim(ClaimTypes.Name, email) };
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
-            html="Login Successful!";//TODO: replace with redirection
+            html =
+                $@"
+                <div id='entire-page' hx-get='/feed' hx-swap='outerHTML' hx-target='#entire-page' hx-trigger='load'>
+                    Loading feed...
+                </div>
+                ";
         }
         else
         {
@@ -197,12 +237,68 @@ app.MapPost("/login", async (
                 Error during login
             </div>
             """;
-
     }
 
     return Results.Content(html, "text/html");
-
 });
+
+//Feed Page (Logged in user)
+app.MapGet("/feed", (HttpContext context) =>
+{
+    return Results.File("feed.html", "text/html");
+});
+
+
+app.MapGet("/feeds", async (HttpContext context, IAntiforgery antiforgery) =>
+{
+    var user = context.User;
+    var userEmail = user.Identity?.Name;
+
+    var sqlSubscriptions = @"SELECT subscription FROM subscriptions WHERE email = @Email";
+    var subscribedFeeds = await connection.QueryAsync<string>(sqlSubscriptions, new { Email = userEmail });
+
+    var html = "<ul class='list-group'>";
+    foreach (var feedUrl in subscribedFeeds)
+    {
+        html += $"<li class='list-group-item'><a href='#' hx-get='/rss?url={feedUrl}' hx-target='#feed-content'>{feedUrl}</a></li>";
+    }
+    html += "</ul>";
+
+    return Results.Content(html, "text/html");
+});
+
+
+app.MapGet("/rss", async (HttpContext context, [FromQuery] string url) =>
+{
+    using var httpClient = new HttpClient();
+    var rssResponse = await httpClient.GetStringAsync(url);
+
+    var rssXml = XDocument.Parse(rssResponse);
+    var items = rssXml.Descendants("item").Select(item => new
+    {
+        Title = item.Element("title")?.Value,
+        Link = item.Element("link")?.Value,
+        Description = item.Element("description")?.Value,
+        PubDate = item.Element("pubDate")?.Value
+    });
+
+    var html = "<h1>RSS Feed</h1><div id='rss-feed'>";
+
+    foreach (var item in items)
+    {
+        html += $@"
+        <div class='rss-item'>
+            <h2><a href='{item.Link}'>{item.Title}</a></h2>
+            <p>{item.Description}</p>
+            <small>{item.PubDate}</small>
+        </div>";
+    }
+
+    html += "</div>";
+
+    return Results.Content(html, "text/html");
+});
+
 
 
 app.Run();

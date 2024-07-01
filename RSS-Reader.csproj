@@ -10,6 +10,7 @@
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'https' " />
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'http' " />
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net" Version="0.1.0" />
     <PackageReference Include="Dapper" Version="2.1.35" />
     <PackageReference Include="Htmx" Version="1.8.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.6" />
