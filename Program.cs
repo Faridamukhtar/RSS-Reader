@@ -1,17 +1,34 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.Data.Sqlite;
 using Dapper;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using BCrypt.Net;
+using System.Net.Http;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddAntiforgery();
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
+{
+    options.Cookie.Name = "YourAppCookieName";
+    options.Cookie.HttpOnly = true;
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Adjust expiration as needed
+    options.SlidingExpiration = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+});
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
@@ -27,7 +44,7 @@ var _connectionString = "Data Source=RSS.db";
 var connection = new SqliteConnection(_connectionString);
 connection.Open();
 
-//Load home page
+// Load home page
 app.MapGet("/", (HttpContext context) =>
 {
     if (context.User.Identity?.IsAuthenticated ?? false)
@@ -38,26 +55,24 @@ app.MapGet("/", (HttpContext context) =>
     return Results.File("index.html", "text/html");
 });
 
-
-//Load landing logo
+// Load landing page
 app.MapGet("/home", (HttpContext context) =>
 {
     var html =
-        $"""
-        <div class="text-center mt-5 pt-5">
-            <em style="font-size:6rem;" class="em-black">Turbo</em><em style="font-size:6rem;" class="em-purple">Feeds</em>
+        $@"
+        <div class='text-center mt-5 pt-5'>
+            <em style='font-size:6rem;' class='em-black'>Turbo</em><em style='font-size:6rem;' class='em-purple'>Feeds</em>
         </div>
 
-        <div class="text-center">
+        <div class='text-center'>
             Revolutionizing Your Browsing Experience
         </div>
-        """;
+        ";
 
     return Results.Content(html, "text/html");
 });
 
-
-//Redirect already authenticated users
+// Redirect authenticated users
 app.Use(async (context, next) =>
 {
     var path = context.Request.Path;
@@ -82,16 +97,16 @@ app.MapGet("/signup", (HttpContext context, IAntiforgery antiforgery) =>
 
     var html =
         $@"
-        <div class=""container"">
-            <h1 class=""font-weight-bold""> Sign Up</h1>
+        <div class='container'>
+            <h1 class='font-weight-bold'> Sign Up</h1>
             <br/>
-            <form hx-post=""/signup"" hx-target=""#error-signup"" method=""post"">
-                <input name=""{token.FormFieldName}"" type=""hidden"" value=""{token.RequestToken}"" />
-                <input type=""text"" name=""email"" class=""form-control m-0"" placeholder=""Enter Your Email"" required/> <br/><br/>
-                <input type=""password"" name=""password"" class=""form-control m-0"" placeholder=""Create a Password"" required/> <br/><br/>
-                <button type=""submit"" class=""btn btn-primary m-0 mb-5"">Sign Up</button>
+            <form hx-post='/signup' hx-target='#error-signup' method='post'>
+                <input name='{token.FormFieldName}' type='hidden' value='{token.RequestToken}' />
+                <input type='text' name='email' class='form-control m-0' placeholder='Enter Your Email' required/> <br/><br/>
+                <input type='password' name='password' class='form-control m-0' placeholder='Create a Password' required/> <br/><br/>
+                <button type='submit' class='btn btn-primary m-0 mb-5'>Sign Up</button>
             </form>
-            <div id=""error-signup""></div>
+            <div id='error-signup'></div>
         </div>
         ";
 
@@ -105,16 +120,16 @@ app.MapGet("/login", (HttpContext context, IAntiforgery antiforgery) =>
 
     var html =
         $@"
-        <div class=""container"">
-            <h1 class=""font-weight-bold"">Login</h1>
+        <div class='container'>
+            <h1 class='font-weight-bold'>Login</h1>
             <br/>
-            <form hx-post=""/login"" hx-target=""#error-login"" method=""post"">
-                <input name=""{token.FormFieldName}"" type=""hidden"" value=""{token.RequestToken}"" />
-                <input type=""email"" name=""email"" class=""form-control m-0"" placeholder=""Enter Your Email"" required/> <br/><br/>
-                <input type=""password"" name=""password"" class=""form-control m-0"" placeholder=""Enter Your Password"" required/> <br/><br/>
-                <button type=""submit"" class=""btn btn-primary m-0 mb-5"">Login</button>
+            <form hx-post='/login' hx-target='#error-login' method='post'>
+                <input name='{token.FormFieldName}' type='hidden' value='{token.RequestToken}' />
+                <input type='email' name='email' class='form-control m-0' placeholder='Enter Your Email' required/> <br/><br/>
+                <input type='password' name='password' class='form-control m-0' placeholder='Enter Your Password' required/> <br/><br/>
+                <button type='submit' class='btn btn-primary m-0 mb-5'>Login</button>
             </form>
-            <div id=""error-login""></div>
+            <div id='error-login'></div>
         </div>
         ";
 
@@ -142,7 +157,7 @@ app.MapPost("/signup", async (
         {
             html =
                 $@"
-                <div class=""alert-danger alert mb-3"">
+                <div class='alert-danger alert mb-3'>
                     User already exists
                 </div>
                 ";
@@ -172,14 +187,18 @@ app.MapPost("/signup", async (
                         ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30)
                     });
 
-                Results.Redirect("/feed");
-                return Results.Content(html, "text/html");
+                html =
+                $@"
+                <div id='entire-page' hx-get='/feed' hx-swap='outerHTML' hx-target='#entire-page' hx-trigger='load'>
+                    Loading feed...
+                </div>
+                ";
             }
             else
             {
                 html =
                     $@"
-                    <div class=""alert-danger alert mb-3"">
+                    <div class='alert-danger alert mb-3'>
                         Error during signup
                     </div>
                     ";
@@ -190,7 +209,7 @@ app.MapPost("/signup", async (
     {
         html =
             $@"
-            <div class=""alert-danger alert mb-3"">
+            <div class='alert-danger alert mb-3'>
                 Error during signup
             </div>
             ";
@@ -217,9 +236,22 @@ app.MapPost("/login", async (
 
         if (user != null && BCrypt.Net.BCrypt.Verify(password, user.password))
         {
-            var claims = new List<Claim> { new Claim(ClaimTypes.Name, email) };
+            var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, email)
+                };
+
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+
+            await context.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity),
+                new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30)
+                });
+
 
             html =
                 $@"
@@ -231,26 +263,27 @@ app.MapPost("/login", async (
         else
         {
             html =
-                $"""
-                <div class="alert-danger alert mb-3">
+                $@"
+                <div class='alert-danger alert mb-3'>
                     Invalid credentials
                 </div>
-                """;
+                ";
         }
 
     }
     catch (Exception e)
     {
         html =
-            $"""
-            <div class="alert-danger alert mb-3">
+            $@"
+            <div class='alert-danger alert mb-3'>
                 Error during login
             </div>
-            """;
+            ";
     }
 
     return Results.Content(html, "text/html");
 });
+
 
 //Feed Page (Logged in user)
 app.MapGet("/feed", (HttpContext context) =>
@@ -258,9 +291,8 @@ app.MapGet("/feed", (HttpContext context) =>
     return Results.File("feed.html", "text/html");
 });
 
-
-//Load subscribed feeds' list
-app.MapGet("/feeds", async (HttpContext context, IAntiforgery antiforgery) =>
+// Load subscribed feeds' list
+app.MapGet("/feeds", async (HttpContext context) =>
 {
     var user = context.User;
     var userEmail = user.Identity?.Name;
@@ -278,7 +310,7 @@ app.MapGet("/feeds", async (HttpContext context, IAntiforgery antiforgery) =>
     return Results.Content(html, "text/html");
 });
 
-//Load selected rss feed
+// Load selected rss feed
 app.MapGet("/rss", async (HttpContext context, [FromQuery] string url) =>
 {
     using var httpClient = new HttpClient();
@@ -312,7 +344,57 @@ app.MapGet("/rss", async (HttpContext context, [FromQuery] string url) =>
     return Results.Content(html, "text/html");
 });
 
+// Add feed endpoint
+app.MapPost("/add-feed", async (HttpContext context) =>
+{
+    var user = context.User;
+    var userEmail = user.Identity?.Name;
+    var feedUrl = context.Request.Form["feedUrl"].ToString();
+
+    var sqlInsert = @"INSERT INTO subscriptions (email, subscription) VALUES (@Email, @Subscription)";
+    await connection.ExecuteAsync(sqlInsert, new { Email = userEmail, Subscription = feedUrl });
+
+    // Return updated feed list (or redirect if needed)
+    context.Response.Redirect("/feed");
+});
+
+// Load subscribed feeds' list to remove them
+app.MapGet("/feeds-to-remove", async (HttpContext context) =>
+{
+    var user = context.User;
+    var userEmail = user.Identity?.Name;
+
+    var sqlSubscriptions = @"SELECT subscription FROM subscriptions WHERE email = @Email";
+    var subscribedFeeds = await connection.QueryAsync<string>(sqlSubscriptions, new { Email = userEmail });
+
+    // Return subscribed feeds as JSON array
+    var feedsJson = subscribedFeeds.Select(feed => new { value = feed, text = feed }).ToList();
+    return Results.Json(feedsJson);
+});
+
+// Remove feed endpoint
+app.MapPost("/remove-feed", async (HttpContext context) =>
+{
+    var user = context.User;
+    var userEmail = user.Identity?.Name;
+    var feedToRemove = context.Request.Form["feedUrlToRemove"].ToString();
+
+    // Example of removing a feed URL (replace with your logic)
+    var sqlDelete = @"DELETE FROM subscriptions WHERE email = @Email AND subscription = @Subscription";
+    await connection.ExecuteAsync(sqlDelete, new { Email = userEmail, Subscription = feedToRemove });
+
+    // Return updated feed list (or redirect if needed)
+    context.Response.Redirect("/feed");
+});
 
 
+
+// Logout endpoint
+app.MapPost("/logout", async (HttpContext context) =>
+{
+    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    context.Response.Cookies.Delete("YourAppCookieName"); // Replace with your cookie name
+    return Results.Redirect("/");
+});
 
 app.Run();

@@ -98,6 +98,10 @@ html {
         display: none;
     }
 
+    #header-large {
+        display:none;
+    }
+
     .topbar {
         display: block;
         background-color: #f8f9fa;
@@ -114,16 +118,16 @@ html {
         overflow-x: auto;
     }
 
-        .topbar .feed-list-mobile li {
-            list-style: none;
-            padding: 5px;
-            white-space: nowrap;
-        }
+    .topbar .feed-list-mobile li {
+        list-style: none;
+        padding: 5px;
+        white-space: nowrap;
+    }
 
-        .topbar .feed-list-mobile a {
-            text-decoration: none;
-            color: #000;
-        }
+    .topbar .feed-list-mobile a {
+        text-decoration: none;
+        color: #000;
+    }
 }
 
 @media (min-width: 768px) {
