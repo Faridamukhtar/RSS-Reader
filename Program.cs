@@ -23,7 +23,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAntiforgery();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
 {
-    options.Cookie.Name = "YourAppCookieName";
+    options.Cookie.Name = "TurboCookie";
     options.Cookie.HttpOnly = true;
     options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Adjust expiration as needed
     options.SlidingExpiration = true;
@@ -71,6 +71,15 @@ app.MapGet("/home", (HttpContext context) =>
 
     return Results.Content(html, "text/html");
 });
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
+    context.Response.Headers.Add("Pragma", "no-cache");
+    context.Response.Headers.Add("Expires", "0");
+    await next();
+});
+
 
 // Redirect authenticated users
 app.Use(async (context, next) =>
@@ -393,8 +402,8 @@ app.MapPost("/remove-feed", async (HttpContext context) =>
 app.MapPost("/logout", async (HttpContext context) =>
 {
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-    context.Response.Cookies.Delete("YourAppCookieName"); // Replace with your cookie name
-    context.Response.Redirect("/");
+    context.Response.Cookies.Delete("TurboCookie");
+    return Results.Redirect("/");
 });
 
 app.Run();
