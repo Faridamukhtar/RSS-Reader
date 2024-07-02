@@ -1,6 +1,5 @@
 ﻿@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 
-
 body {
     font-family: "Montserrat", sans-serif;
     background-color: #f5f5f5;
@@ -28,7 +27,7 @@ html {
 }
 
 .navbar-brand {
-    font-weight: 800
+    font-weight: 800;
 }
 
 .em-purple {
@@ -41,10 +40,10 @@ html {
     color: #3e3e3e;
 }
 
-.card-title a:hover {
-    color: #6f42c1;
-    text-decoration: underline;
-}
+    .card-title a:hover {
+        color: #6f42c1;
+        text-decoration: underline;
+    }
 
 .em-black {
     color: #3e3e3e;
@@ -66,32 +65,32 @@ html {
     padding: 1rem;
 }
 
-.sidebar h2 {
-    color: #9d32ff;
-}
+    .sidebar h2 {
+        color: #9d32ff;
+    }
 
-.sidebar ul {
-    list-style-type: none;
-    padding: 0;
-}
+    .sidebar ul {
+        list-style-type: disc;
+        padding: 0;
+        margin-left: 1rem;
+    }
 
-.sidebar ul li {
-    padding: 0.5rem 0;
-}
+    .sidebar ul li {
+        padding: 0.5rem 0;
+    }
 
-.sidebar ul li a {
-    color: #3e3e3e;
-    text-decoration: none;
-}
+    .sidebar ul li a {
+        color: #3e3e3e;
+        text-decoration: none;
+    }
 
-.sidebar ul li a:hover {
-    color: #9d32ff;
-}
+    .sidebar ul li a:hover {
+        color: #9d32ff;
+    }
 
-
-.topbar {
-    display: none;
-}
+    .topbar {
+        display: none;
+    }
 
 @media (max-width: 991.98px) {
     .sidebar {
@@ -99,13 +98,13 @@ html {
     }
 
     #header-large {
-        display:none;
+        display: none;
     }
 
     .topbar {
         display: block;
-        background-color: #f8f9fa;
-        padding: 10px;
+        background-color: #ececec;
+        padding: 1rem;
     }
 
     .main-content {
@@ -119,7 +118,7 @@ html {
     }
 
     .topbar .feed-list-mobile li {
-        list-style: none;
+        list-style: disc;
         padding: 5px;
         white-space: nowrap;
     }
@@ -128,10 +127,44 @@ html {
         text-decoration: none;
         color: #000;
     }
+
+    .topbar h2 {
+        color: #9d32ff;
+    }
+
+    .topbar ul {
+        list-style-type: disc;
+        padding: 0;
+        margin-left: 1rem;
+    }
+
+    .topbar ul li {
+        padding: 0.5rem 0;
+    }
+
+    .topbar ul li a {
+        color: #3e3e3e;
+        text-decoration: none;
+    }
+
+    .topbar ul li a:hover {
+        color: #9d32ff;
+    }
 }
 
 @media (min-width: 768px) {
     html {
         font-size: 16px;
     }
+}
+
+.modal-dialog {
+    max-width: 90%;
+}
+
+.footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #f8f9fa;
 }

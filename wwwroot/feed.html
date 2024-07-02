@@ -97,7 +97,7 @@
                     <form id="removeFeedForm" hx-post="/remove-feed" hx-target="#entire-page" hx-swap="outerHTML" hx-trigger="submit">
                         <div class="mb-3">
                             <label for="feedUrlToRemove" class="form-label">Select Feed to Remove</label>
-                            <select class="form-select" id="feedUrlToRemove" name="feedUrlToRemove" hx-get="/feeds-to-remove" hx-target="#feedUrlToRemove" hx-trigger="changed">
+                            <select class="form-select" id="feedUrlToRemove" name="feedUrlToRemove" hx-get="/feeds-to-remove" hx-target="#feedUrlToRemove" hx-trigger="load">
                                 <option value="">Select feed to remove</option>
                                 <!-- Options populated dynamically by HTMX -->
                             </select>
@@ -108,8 +108,6 @@
             </div>
         </div>
     </div>
-
-
 
     <footer class="border-top footer text-muted">
         <div class="container">

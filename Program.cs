@@ -363,22 +363,29 @@ app.MapPost("/add-feed", async (HttpContext context) =>
     var sqlInsert = @"INSERT INTO subscriptions (email, subscription) VALUES (@Email, @Subscription)";
     await connection.ExecuteAsync(sqlInsert, new { Email = userEmail, Subscription = feedUrl });
 
-    // Return updated feed list (or redirect if needed)
     context.Response.Redirect("/feed");
 });
 
-// Load subscribed feeds' list to remove them
+// Endpoint to get the list of feeds for the remove dropdown
 app.MapGet("/feeds-to-remove", async (HttpContext context) =>
 {
-    var user = context.User;
-    var userEmail = user.Identity?.Name;
+    var userEmail = context.User.Identity?.Name;
 
     var sqlSubscriptions = @"SELECT subscription FROM subscriptions WHERE email = @Email";
     var subscribedFeeds = await connection.QueryAsync<string>(sqlSubscriptions, new { Email = userEmail });
+    var html = $"""
+        <select class="form-select" id="feedUrlToRemove" name="feedUrlToRemove">
+        <option value=''>Select feed to remove</option>
+        """;
 
-    // Return subscribed feeds as JSON array
-    var feedsJson = subscribedFeeds.Select(feed => new { value = feed, text = feed }).ToList();
-    return Results.Json(feedsJson);
+    foreach (var feedUrl in subscribedFeeds)
+    {
+        html += $"<option value='{feedUrl}'>{feedUrl}</option>";
+    }
+
+    html += "</select>";
+
+    return Results.Content(html, "text/html");
 });
 
 // Remove feed endpoint
@@ -388,11 +395,9 @@ app.MapPost("/remove-feed", async (HttpContext context) =>
     var userEmail = user.Identity?.Name;
     var feedToRemove = context.Request.Form["feedUrlToRemove"].ToString();
 
-    // Example of removing a feed URL (replace with your logic)
     var sqlDelete = @"DELETE FROM subscriptions WHERE email = @Email AND subscription = @Subscription";
     await connection.ExecuteAsync(sqlDelete, new { Email = userEmail, Subscription = feedToRemove });
 
-    // Return updated feed list (or redirect if needed)
     context.Response.Redirect("/feed");
 });
 
