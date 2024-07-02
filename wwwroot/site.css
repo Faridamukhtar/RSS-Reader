@@ -83,6 +83,10 @@ html {
     color: #9d32ff;
 }
 
+a:hover {
+    cursor: pointer;
+}
+
 .topbar h2 {
     color: #9d32ff;
     font-weight: bold;

@@ -43,6 +43,20 @@ var _connectionString = "Data Source=RSS.db";
 var connection = new SqliteConnection(_connectionString);
 connection.Open();
 
+connection.Execute(@"CREATE TABLE IF NOT EXISTS user (
+	                ""email""	TEXT,
+	                ""password""	TEXT NOT NULL,
+	                PRIMARY KEY(""email"")
+                    );");
+
+connection.Execute(@"CREATE TABLE IF NOT EXISTS subscriptions (
+                    ""email""	TEXT NOT NULL,
+                    ""subscription""	TEXT NOT NULL,
+                    PRIMARY KEY(""email"",""subscription""),
+                    FOREIGN KEY(""email"") REFERENCES ""user""(""email"") ON DELETE CASCADE ON UPDATE CASCADE
+                    );");
+
+
 // Load home page
 app.MapGet("/", (HttpContext context) =>
 {
