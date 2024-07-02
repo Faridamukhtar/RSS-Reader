@@ -298,7 +298,7 @@ app.MapPost("/login", async (
 app.MapGet("/feed", (HttpContext context) =>
 {
     return Results.File("feed.html", "text/html");
-});
+}).RequireAuthorization();
 
 // Load subscribed feeds' list
 app.MapGet("/feeds", async (HttpContext context) =>
@@ -317,7 +317,7 @@ app.MapGet("/feeds", async (HttpContext context) =>
     html += "</ul>";
 
     return Results.Content(html, "text/html");
-});
+}).RequireAuthorization();
 
 // Load selected rss feed
 app.MapGet("/rss", async (HttpContext context, [FromQuery] string url) =>
@@ -351,7 +351,7 @@ app.MapGet("/rss", async (HttpContext context, [FromQuery] string url) =>
     html += "</div>";
 
     return Results.Content(html, "text/html");
-});
+}).RequireAuthorization();
 
 
 
@@ -366,7 +366,7 @@ app.MapPost("/add-feed", async (HttpContext context) =>
     await connection.ExecuteAsync(sqlInsert, new { Email = userEmail, Subscription = feedUrl });
 
     context.Response.Redirect("/feed");
-});
+}).RequireAuthorization();
 
 // Endpoint to get the list of feeds for the remove dropdown
 app.MapGet("/feeds-to-remove", async (HttpContext context) =>
@@ -388,7 +388,7 @@ app.MapGet("/feeds-to-remove", async (HttpContext context) =>
     html += "</select>";
 
     return Results.Content(html, "text/html");
-});
+}).RequireAuthorization();
 
 // Remove feed endpoint
 app.MapPost("/remove-feed", async (HttpContext context) =>
@@ -401,7 +401,7 @@ app.MapPost("/remove-feed", async (HttpContext context) =>
     await connection.ExecuteAsync(sqlDelete, new { Email = userEmail, Subscription = feedToRemove });
 
     context.Response.Redirect("/feed");
-});
+}).RequireAuthorization();
 
 
 
@@ -411,6 +411,6 @@ app.MapPost("/logout", async (HttpContext context) =>
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     context.Response.Cookies.Delete("TurboCookie");
     return Results.Redirect("/");
-});
+}).RequireAuthorization();
 
 app.Run();
