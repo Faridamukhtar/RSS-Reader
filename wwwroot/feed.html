@@ -31,12 +31,14 @@
 
     <div class="d-flex flex-column flex-lg-row">
         <!-- Top bar for mobile -->
-        <div class="topbar d-lg-none">
+        <div class="topbar d-lg-none p-4">
             <h2 class="font-weight-bold">Active Feeds</h2>
-            <ul id="feed-list-mobile" class="d-flex" hx-get="/feeds" hx-target="#feed-list-mobile" hx-trigger="load">
+            <br />
+            <ul id="feed-list-mobile" class="d-flex justify-content-start" hx-get="/feeds" hx-target="#feed-list-mobile" hx-trigger="load">
                 <!-- Feed items will be loaded dynamically here -->
             </ul>
-            <div class="mt-3">
+            <br />
+            <div class="mt-3 d-flex justify-content-between">
                 <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addFeedModal">Add Feed</button>
                 <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#removeFeedModal">Remove Feed</button>
             </div>
@@ -45,9 +47,11 @@
         <!-- Sidebar for larger screens -->
         <div class="sidebar d-none d-lg-block">
             <h2 class="font-weight-bold ml-2">Active Feeds</h2>
+            <br/>
             <ul id="feed-list" hx-get="/feeds" hx-target="#feed-list" hx-trigger="load">
                 <!-- Feed items will be loaded dynamically here -->
             </ul>
+            <br/>
             <div class="mt-3">
                 <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addFeedModal">Add Feed</button>
                 <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#removeFeedModal">Remove Feed</button>

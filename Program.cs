@@ -341,7 +341,7 @@ app.MapGet("/rss", async (HttpContext context, [FromQuery] string url) =>
         html += $@"
         <div class='card mb-4'>
             <div class='card-body'>
-                <h5 class='card-title'><a href='{item.Link}' class='text-decoration-none'>{item.Title}</a></h5>
+                <h5 class='card-title'><a href='{item.Link}' class='text-decoration-none em-purple'>{item.Title}</a></h5>
                 <p class='card-text'>{item.Description}</p>
                 <p class='card-text'><small class='text-muted'>{item.PubDate}</small></p>
             </div>
@@ -352,6 +352,8 @@ app.MapGet("/rss", async (HttpContext context, [FromQuery] string url) =>
 
     return Results.Content(html, "text/html");
 });
+
+
 
 // Add feed endpoint
 app.MapPost("/add-feed", async (HttpContext context) =>
