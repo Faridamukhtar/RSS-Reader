@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.Data.Sqlite;
 using Dapper;
@@ -80,7 +79,6 @@ app.Use(async (context, next) =>
     await next();
 });
 
-
 // Redirect authenticated users
 app.Use(async (context, next) =>
 {
@@ -151,7 +149,8 @@ app.MapPost("/signup", async (
     HttpContext context,
     [FromForm] string email,
     [FromForm] string password,
-    IAntiforgery antiforgery) =>
+    IAntiforgery antiforgery,
+    ILogger<Program> logger) =>
 {
     var html = "";
 
@@ -208,7 +207,7 @@ app.MapPost("/signup", async (
                 html =
                     $@"
                     <div class='alert-danger alert mb-3'>
-                        Error during signup
+                        Error during signup: Unable to insert user into database
                     </div>
                     ";
             }
@@ -216,16 +215,18 @@ app.MapPost("/signup", async (
     }
     catch (Exception e)
     {
+        logger.LogError(e, "Error during signup");
         html =
             $@"
             <div class='alert-danger alert mb-3'>
-                Error during signup
+                Error during signup: {e.Message}
             </div>
             ";
     }
 
     return Results.Content(html, "text/html");
 });
+
 
 // Process login request
 app.MapPost("/login", async (
@@ -375,10 +376,9 @@ app.MapGet("/feeds-to-remove", async (HttpContext context) =>
 
     var sqlSubscriptions = @"SELECT subscription FROM subscriptions WHERE email = @Email";
     var subscribedFeeds = await connection.QueryAsync<string>(sqlSubscriptions, new { Email = userEmail });
-    var html = $"""
-        <select class="form-select" id="feedUrlToRemove" name="feedUrlToRemove">
-        <option value=''>Select feed to remove</option>
-        """;
+    var html = $@"
+        <select class='form-select' id='feedUrlToRemove' name='feedUrlToRemove'>
+        <option value=''>Select feed to remove</option>";
 
     foreach (var feedUrl in subscribedFeeds)
     {
