@@ -229,3 +229,7 @@ a:hover {
 .card a {
     color: #3e3e3e;
 }
+
+body, html {
+    overflow: visible !important;
+}
